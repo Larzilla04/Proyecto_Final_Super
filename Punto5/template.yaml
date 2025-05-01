@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Infraestructura corregida para AWS Learner Lab - Punto 5'
+
+Parameters:
+  InstanceType:
+    Description: Tipo de instancia EC2
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro, t2.small]
+
+Resources:
+  MyS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub 'bucket-punt5-${AWS::AccountId}'
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  InstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Permite SSH (22) y HTTP (80)'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  MyEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: 'ami-085386e29e44dacd7'
+      KeyName: 'vockey'
+      SecurityGroupIds:
+        - !GetAtt InstanceSecurityGroup.GroupId
+      Tags:
+        - Key: Name
+          Value: instan-punt5
+      UserData: 
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd
+          systemctl start httpd
+          systemctl enable httpd
+          echo "<h1>Instancia instan-punt5 creada con CloudFormation</h1>" > /var/www/html/index.html
+
+Outputs:
+  InstancePublicDNS:
+    Description: DNS público de la instancia
+    Value: !GetAtt MyEC2Instance.PublicDnsName
+  BucketName:
+    Description: Nombre del bucket S3
+    Value: !Ref MyS3Bucket
