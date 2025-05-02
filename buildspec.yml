@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - echo "Instalando Docker..."
+      - apt-get update && apt-get install -y docker.io
+  pre_build:
+    commands:
+      - echo "Prebuild listo"
+  build:
+    commands:
+      - echo "Construyendo imagen Docker..."
+      - docker build -t flask-app ./app
+  post_build:
+    commands:
+      - echo "Build completado"
+artifacts:
+  files:
+    - '**/*'
